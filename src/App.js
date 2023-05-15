@@ -20,7 +20,10 @@ const App = () => {
   const [currentGPTGuess, setCurrentGPTGuess] = useState('');
   const [currentGPTGuessColor, setCurrentGPTGuessColor] = useState('');
   const [chatGPTAnswer, setChatGPTAnswer] = useState('');
-  const [didILie, setDidILie] = useState('');
+  const [nameHost, setNameHost] = useState('');
+  const [nameGuest, setNameGuest] = useState('');
+  const [lastAnswer,setLastAnswer] = useState('');
+
 
   const words = ['RED', 'BLACK',  'BLACK', 'RED', 'RED', 'BLACK',  'BLACK', 'RED', 'RED', 'BLACK'];
 
@@ -30,12 +33,7 @@ const App = () => {
 	  }
 	  return 'RED';
   }
-    const inverseAnswer = (c) => {
-  	  if (c === 'yes') {
-  		  return 'no';
-  	  }
-  	  return 'yes';
-  }
+
 
   const startGame = () => {
     setStage(STAGE_GUEST_TRUTH_OR_LIE);
@@ -44,20 +42,36 @@ const App = () => {
     setAnswers([]);
   };
 
+    const handleNameChangeHost = (e) => {
+      setNameHost(e.target.value);
+  };
+    const handleNameChangeGuest = (e) => {
+      setNameGuest(e.target.value);
+  };
+
+  const lastLieStatus = () => {
+	  return ( answers[answers.length - 1] === 'yes' ?
+	  	`caught ${nameHost} lying ?` :
+	  	`confirmed that ${nameHost} told the truth ?`
+	  	)
+  }
     const handleTruthOrLieAnswer = (answer) => {
-      setDidILie(answer);
-  	setStage(STAGE_GUEST_CORRECT);
+      setAnswers((prevAnswers) => [...prevAnswers, answer]);
+      setLastAnswer('');
+  	  setStage(STAGE_GUEST_CORRECT);
     };
 
 
     const handleAnswer = (answer) => {
 
-      setAnswers((prevAnswers) => [...prevAnswers, didILie]);
+	  setLastAnswer(answer);
+
       setQuestionCount((prevCount) => prevCount + 1);
 
           if (answer === 'yes') {
   	      setYesCount((prevCount) => prevCount + 1);
   	    }
+
 
       if (questionCount + 1 === 10) {
   	  setSummaryText(yesCount > 5 ? 'Not bad' : ( yesCount > 4 ? 'Rather average' : 'Terrible'))
@@ -66,6 +80,31 @@ const App = () => {
   	  setStage(STAGE_GUEST_TRUTH_OR_LIE);
   	}
   };
+
+   const handleReenterAnswers = () => {
+
+	      		setAnswers((prevAnswers) => {
+	   			const pr = [...prevAnswers]
+	   			pr.pop();
+	   			return pr;
+			});
+
+	 if (stage === STAGE_GUEST_TRUTH_OR_LIE) {
+	   if (questionCount > 0) {
+	   	setQuestionCount((prevCount) => prevCount - 1);
+   		if (lastAnswer === 'yes') {
+			setYesCount((prevCount) => prevCount - 1);
+		}
+
+		}
+	} else {
+	}
+
+	   setLastAnswer('');
+	   setStage(STAGE_GUEST_TRUTH_OR_LIE);
+
+
+   }
 
   const handleGPTAnswer = (answer) => {
 	  const calculatedCurrentGPTGuess = answers[questionCount] === 'yes' ?
@@ -121,6 +160,13 @@ const App = () => {
         {stage === STAGE_START && (
           <div style={styles.stageContainer}>
             {questionCount ? (<h1 style={styles.header}>Game Over</h1>) : ( <p/> ) }
+                     <div  style={styles.inputContainer}>
+			            <input style={styles.inputBox} type="text" id="name" placeholder="Who is lying?" value={nameHost} onChange={handleNameChangeHost} />
+          			</div>
+
+          			            <div style={styles.inputContainer}>
+								            <input style={styles.inputBox}  placeholder="Who will be guessing?"  type="text" id="name" value={nameGuest} onChange={handleNameChangeGuest} />
+          			</div>
             <button style={styles.button} onClick={startGame}>
               Start New Game
             </button>
@@ -129,39 +175,45 @@ const App = () => {
 
         {stage === STAGE_GUEST_TRUTH_OR_LIE && (
           <div style={styles.stageContainer}>
-            <h1 style={styles.header}>How well can you tell a lie.</h1>
+            <h1 style={styles.header}>How well can {nameGuest} spot a lie.</h1>
 
             <p style={styles.question}>
-              Question {questionCount + 1}: Was it a lie?
+              Question {questionCount + 1}: Did {nameHost} tell the truth?
             </p>
               <p />
 
 
-            <button style={styles.button} onClick={() => handleTruthOrLieAnswer('yes')}>
-              Yes
-            </button>
             <button style={styles.button} onClick={() => handleTruthOrLieAnswer('no')}>
-              No
+              Truth
             </button>
+            <button style={styles.button} onClick={() => handleTruthOrLieAnswer('yes')}>
+              Lie
+            </button>
+                     <button style={styles.buttonBack} onClick={() => handleReenterAnswers()}>
+								  Back
+            		</button>
           </div>
         )}
 
                 {stage === STAGE_GUEST_CORRECT && (
 		          <div style={styles.stageContainer}>
-		            <h1 style={styles.header}>How well can you tell a lie.</h1>
+		            <h1 style={styles.header}>How well can {nameGuest} spot a lie.</h1>
 
 		            <p style={styles.question}>
-		              Question {questionCount + 1}: Did you guess correctly ?
+		              Question {questionCount + 1}: Did {nameGuest} {lastLieStatus()}
 		            </p>
 		              <p />
 
 
 		            <button style={styles.button} onClick={() => handleAnswer('yes')}>
-		              Guessed right :)
+		              Yes
 		            </button>
 		            <button style={styles.button} onClick={() => handleAnswer('no')}>
-		              Guessed wrong :(
+		              No
 		            </button>
+		                        <button style={styles.buttonBack} onClick={() => handleReenterAnswers()}>
+								  Back
+            		</button>
 		          </div>
         )}
 
@@ -169,20 +221,20 @@ const App = () => {
         {stage === STAGE_GUEST_SUMMARY && (
           <div style={styles.stageContainer}>
             <h1 style={styles.header}>Summary</h1>
-              <p style={styles.answerList}>You got {yesCount} correctly, {summaryText} !</p>
+              <p style={styles.answerList}>{nameHost} got {yesCount} correctly, {summaryText} !</p>
 
 			<p />
             <button style={styles.button} onClick={startAsking}>
-              Now it's my turn!
+              Now it's GPT turn!
             </button>
           </div>
         )}
 
                 {stage === STAGE_GPT_TRUTH_OR_LIE && (
 		          <div style={styles.stageContainer}>
-		            <h1 style={styles.header}>Now it's GPT turn to see if you lie!</h1>
+		            <h1 style={styles.header}>Now it's GPT turn to see if {nameHost} lie!</h1>
 		            <p style={styles.question}>
-		              Question {questionCount + 1}: Is your card RED or BLACK ?
+		              Question {questionCount + 1}: {nameHost}, is your card RED or BLACK ?
 		            </p>
 		            <button     style={{
 		                ...styles.colorBox,
@@ -201,7 +253,7 @@ const App = () => {
 
                         {(stage === STAGE_GPT_CORRECT || stage === STAGE_GPT_SUMMARY) && (
 				          <div style={styles.stageContainer}>
-				            <h1 style={styles.header}>Now it's my turn to decide if you lie!</h1>
+				            <h1 style={styles.header}>Now it's GPT turn to decide if {nameHost} lie!</h1>
 				              <p style={styles.answerList}>{chatGPTAnswer} It was {currentGPTGuess}</p>
 		            <div
 				              style={{
@@ -246,6 +298,10 @@ const App = () => {
 		            </button>
 		          </div>
         )}
+
+        {false && (
+			 <div>{JSON.stringify(answers)}</div>
+			 )}
       </div>
     );
 };
@@ -271,6 +327,8 @@ const styles = {
   question: {
     fontSize: '18px',
     marginBottom: '10px',
+
+      fontFamily: 'Helvetica'
   },
   colorBox: {
     width: '200px',
@@ -288,6 +346,17 @@ const styles = {
     cursor: 'pointer',
     marginRight: '10px',
   },
+    buttonBack: {
+      padding: '10px 20px',
+      fontSize: '16px',
+      fontWeight: 'bold',
+      backgroundColor: '#b3b3cc',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '3px',
+      cursor: 'pointer',
+      marginRight: '10px',
+  },
   answerList: {
     listStyleType: 'none',
     margin: '0',
@@ -297,6 +366,22 @@ const styles = {
     fontSize: '16px',
     marginBottom: '5px',
   },
+ inputBox: {
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+    padding: "8px",
+    fontSize: "14px",
+    borderColor:"#8e8ea0",
+    colorScheme:"light",
+    fontFamily:"Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji",
+
+  },
+  inputContainer: {
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    padding: "8px",
+    borderRadius: "4px",
+    marginBottom: "16px",
+	}
 };
 
 
