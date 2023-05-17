@@ -221,7 +221,7 @@ const App = () => {
         {stage === STAGE_GUEST_SUMMARY && (
           <div style={styles.stageContainer}>
             <h1 style={styles.header}>Summary</h1>
-              <p style={styles.answerList}>{nameHost} got {yesCount} correctly, {summaryText} !</p>
+              <p style={styles.answerList}>{nameGuest} got {yesCount} correctly, {summaryText} !</p>
 
 			<p />
             <button style={styles.button} onClick={startAsking}>
@@ -232,9 +232,9 @@ const App = () => {
 
                 {stage === STAGE_GPT_TRUTH_OR_LIE && (
 		          <div style={styles.stageContainer}>
-		            <h1 style={styles.header}>Now it's GPT turn to see if {nameHost} lie!</h1>
+		            <h1 style={styles.header}>Now it's GPT turn to see if {nameGuest} lie!</h1>
 		            <p style={styles.question}>
-		              Question {questionCount + 1}: {nameHost}, is your card RED or BLACK ?
+		              Question {questionCount + 1}: {nameGuest}, is your card RED or BLACK ?
 		            </p>
 		            <button     style={{
 		                ...styles.colorBox,
@@ -253,7 +253,7 @@ const App = () => {
 
                         {(stage === STAGE_GPT_CORRECT || stage === STAGE_GPT_SUMMARY) && (
 				          <div style={styles.stageContainer}>
-				            <h1 style={styles.header}>Now it's GPT turn to decide if {nameHost} lie!</h1>
+				            <h1 style={styles.header}>Now it's GPT turn to decide if {nameGuest} lie!</h1>
 				              <p style={styles.answerList}>{chatGPTAnswer} It was {currentGPTGuess}</p>
 		            <div
 				              style={{
